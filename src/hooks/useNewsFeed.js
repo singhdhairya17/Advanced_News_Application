@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { fetchNews } from '../services/newsService'
-import { filterArticlesByQuery } from '../utils/articleUtils'
+
+const SEARCH_DEBOUNCE_MS = 450
 
 export function useNewsFeed() {
   const [articles, setArticles] = useState([])
@@ -9,34 +10,42 @@ export function useNewsFeed() {
   const [category, setCategory] = useState('general')
   const [region, setRegion] = useState('global')
   const [search, setSearch] = useState('')
-
-  const refresh = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-
-    const result = await fetchNews({ region, category })
-
-    if (!result.ok) {
-      setError(result.error)
-      setArticles([])
-    } else {
-      setArticles(result.articles)
-    }
-
-    setLoading(false)
-  }, [category, region])
+  const [debouncedSearch, setDebouncedSearch] = useState('')
 
   useEffect(() => {
-    refresh()
-  }, [refresh])
+    const id = setTimeout(() => setDebouncedSearch(search.trim()), SEARCH_DEBOUNCE_MS)
+    return () => clearTimeout(id)
+  }, [search])
 
-  const filtered = useMemo(
-    () => filterArticlesByQuery(articles, search),
-    [articles, search]
+  const load = useCallback(
+    async (query) => {
+      setLoading(true)
+      setError(null)
+
+      const result = await fetchNews({ region, category, search: query })
+
+      if (!result.ok) {
+        setError(result.error)
+        setArticles([])
+      } else {
+        setArticles(result.articles)
+      }
+
+      setLoading(false)
+    },
+    [category, region]
   )
 
-  const featured = filtered[0]
-  const rest = featured ? filtered.slice(1) : []
+  useEffect(() => {
+    load(debouncedSearch)
+  }, [debouncedSearch, load])
+
+  const refresh = useCallback(() => {
+    load(search.trim())
+  }, [load, search])
+
+  const featured = articles[0]
+  const rest = featured ? articles.slice(1) : []
 
   return {
     articles,
@@ -52,6 +61,6 @@ export function useNewsFeed() {
     featured,
     rest,
     showSkeleton: loading && articles.length === 0 && !error,
-    showNoMatches: !loading && !error && filtered.length === 0,
+    showNoMatches: !loading && !error && articles.length === 0,
   }
 }

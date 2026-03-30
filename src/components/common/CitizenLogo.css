@@ -1,0 +1,32 @@
+.citizen-logo-mark {
+  display: block;
+  flex-shrink: 0;
+}
+
+.citizen-logo-bg {
+  fill: var(--accent);
+}
+
+.citizen-logo-fold {
+  fill: #000000;
+  opacity: 0.16;
+}
+
+[data-theme='dark'] .citizen-logo-fold {
+  opacity: 0.22;
+}
+
+[data-theme='light'] .citizen-logo-line {
+  fill: #ffffff;
+  opacity: 0.95;
+}
+
+[data-theme='dark'] .citizen-logo-line {
+  fill: #0f1419;
+  opacity: 0.9;
+}
+
+.citizen-logo-mark--header {
+  width: 38px;
+  height: 38px;
+}

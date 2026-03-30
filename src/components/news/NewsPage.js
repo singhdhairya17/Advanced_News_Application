@@ -25,12 +25,14 @@ export function NewsPage() {
 
   return (
     <main className="news-page" id="top">
-      <section className="news-intro">
+      <section className="news-intro" aria-labelledby="news-heading">
         <p className="news-kicker">Updated headlines</p>
-        <h1 className="news-title">Today&apos;s top stories</h1>
+        <h1 id="news-heading" className="news-title">
+          Today&apos;s top stories
+        </h1>
         <p className="news-subtitle">
-          <strong>Global</strong> uses worldwide English stories; <strong>India</strong> uses Indian top
-          headlines. Pick a topic, search, and open articles in a new tab.
+          <strong>Global</strong> pulls worldwide English stories; <strong>India</strong> focuses on
+          Indian headlines. Choose a topic, search by keyword, and open any story in a new tab.
         </p>
       </section>
 

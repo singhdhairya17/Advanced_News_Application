@@ -11,13 +11,15 @@ export function FeaturedStory({ article }) {
         Featured story
       </h2>
       <a className="featured-card" href={article.url} target="_blank" rel="noopener noreferrer">
-        <div className="featured-image-wrap">
-          <SafeArticleImage
-            src={article.urlToImage}
-            fallback={PLACEHOLDER_IMAGE_URL}
-            className="featured-image"
-          />
-          <div className="featured-gradient" aria-hidden="true" />
+        <div className="featured-image-outer">
+          <div className="featured-image-aspect">
+            <SafeArticleImage
+              src={article.urlToImage}
+              fallback={PLACEHOLDER_IMAGE_URL}
+              className="featured-image"
+            />
+            <div className="featured-gradient" aria-hidden="true" />
+          </div>
         </div>
         <div className="featured-content">
           <span className="featured-badge">Featured</span>

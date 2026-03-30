@@ -12,6 +12,58 @@ import { filterValidArticles } from '../utils/articleUtils'
 const FALLBACK_KEY = '6df65848ae72492da5458da9fc528a67'
 
 /**
+ * @param {string} raw
+ * @returns {string | null}
+ */
+function sanitizeUserSearchQuery(raw) {
+  const s = String(raw)
+    .trim()
+    .replace(/[\n\r]+/g, ' ')
+    .slice(0, 200)
+    .replace(/[()]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return s.length > 0 ? s : null
+}
+
+/**
+ * @param {{ region: 'global' | 'in'; category: string; userTerms: string }} p
+ * @returns {string}
+ */
+function buildKeywordSearchQuery({ region, category, userTerms }) {
+  const clause = `(${userTerms})`
+  if (region === 'in') {
+    if (category === 'general') {
+      return `${clause} AND India`
+    }
+    const topic = GLOBAL_CATEGORY_QUERIES[category] || 'news'
+    return `${clause} AND India AND (${topic})`
+  }
+  if (category === 'general') {
+    return clause
+  }
+  const topic = GLOBAL_CATEGORY_QUERIES[category] || GLOBAL_CATEGORY_QUERIES.general
+  return `${clause} AND (${topic})`
+}
+
+/**
+ * @param {{ q: string; pageSize: number; apiKey: string }} p
+ * @returns {Promise<FetchHeadlinesResult>}
+ */
+async function fetchEverythingByQuery({ q, pageSize, apiKey }) {
+  const url = new URL(`${NEWS_API_BASE}/everything`)
+  url.searchParams.set('q', q)
+  url.searchParams.set('language', 'en')
+  url.searchParams.set('sortBy', 'publishedAt')
+  url.searchParams.set('pageSize', String(pageSize))
+  url.searchParams.set('apiKey', apiKey)
+
+  const response = await fetch(url.toString())
+  const data = await response.json()
+  return resultFromApiPayload(data)
+}
+
+/**
  * @param {unknown} data
  * @returns {FetchHeadlinesResult}
  */
@@ -98,10 +150,15 @@ async function fetchGlobalEverything({ category, pageSize, apiKey }) {
 }
 
 /**
- * @param {{ region: 'global' | 'in'; category: string; pageSize?: number }} params
+ * @param {{ region: 'global' | 'in'; category: string; pageSize?: number; search?: string }} params
  * @returns {Promise<FetchHeadlinesResult>}
  */
-export async function fetchNews({ region, category, pageSize = DEFAULT_HEADLINES_PAGE_SIZE }) {
+export async function fetchNews({
+  region,
+  category,
+  pageSize = DEFAULT_HEADLINES_PAGE_SIZE,
+  search = '',
+}) {
   const apiKey = getNewsApiKey() || FALLBACK_KEY
 
   if (!apiKey) {
@@ -112,7 +169,14 @@ export async function fetchNews({ region, category, pageSize = DEFAULT_HEADLINES
     }
   }
 
+  const userTerms = sanitizeUserSearchQuery(search)
+
   try {
+    if (userTerms) {
+      const q = buildKeywordSearchQuery({ region, category, userTerms })
+      return await fetchEverythingByQuery({ q, pageSize, apiKey })
+    }
+
     if (region === 'in') {
       return await fetchIndiaHeadlines({ category, pageSize, apiKey })
     }
